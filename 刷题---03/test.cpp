@@ -262,10 +262,78 @@ public:
 
 		return newhead;
 	}
-//6**********************在O(1)时间删除链表结点
-//7**********************复杂链表的复制
-//8**********************两个链表的第一个公共结点
-//9**********************用循环链表模拟圆圈
+//6**********************两个链表的第一个公共结点
+	void Cross(ListNode *head2)
+	{
+		//蛮力法,O(m*n)
+		ListNode *cur1 = _head;
+		ListNode *cur2 = head2;
+		if(cur1 == NULL || cur2 == NULL){
+			return;
+		}
+		while(NULL != cur1)
+		{
+			while(NULL != cur2)
+			{
+				if(cur1->_data == cur2->_data)
+				{
+					cout<<"交叉点是："<<cur1->_data<<endl;
+					return;
+				}
+				cur2 = cur2->_next;
+			}
+			cur2 = head2;
+			cur1 = cur1->_next;
+		}
+		cout<<"没有交叉"<<endl;
+	}
+	void Cross_Better(ListNode *head2)
+	{
+		if(_head == NULL || head2 == NULL){
+			return;
+		}
+
+		int length1 = GetLength(_head);
+		int length2 = GetLength(head2);
+
+		int sub = abs(length1 - length2);
+		 
+		ListNode *LongList = _head;
+		ListNode *ShortList = head2;
+
+		if(length1 < length2)
+			swap(LongList,ShortList);
+
+		//长链表先走sub步
+		while(sub > 0)
+		{
+			LongList = LongList->_next;
+			sub--;
+		}
+
+		while(LongList != NULL)
+		{
+			if(LongList->_data == ShortList->_data)
+			{
+				cout<<"交叉点是："<<LongList->_data<<endl;
+				return;
+			}
+			LongList = LongList->_next;
+			ShortList = ShortList->_next;
+		}
+
+		cout<<"没有交叉"<<endl;
+	}
+	int GetLength(ListNode *head)
+	{
+		int count = 0;
+		while(head != NULL)
+		{
+			count++;
+			head =head->_next;
+		}
+		return count;
+	}
 };
 void testPrintListReverse()
 {
@@ -362,13 +430,117 @@ void testMerge()
 		head = head->_next;
 	}
 }
+void testCross()
+{
+	List s1;
+	s1.Push_Back(1);
+	s1.Push_Back(2);
+	s1.Push_Back(3);
+	s1.Push_Back(4);
+	s1.Push_Back(5);
+	
+	List s2;
+	s2.Push_Back(2);
+	s2.Push_Back(3);
+	s2.Push_Back(4);
+	s2.Push_Back(5);
+
+	s1.Cross(s2.GetHead());
+	s1.Cross_Better(s2.GetHead());
+
+}
+//7**********************复杂链表的复制
+struct _ListNode{            //定义一个结点
+	char data;
+	struct _ListNode *next;
+	struct _ListNode *rand;
+
+	_ListNode(const char _data)
+		:data(_data)
+		,next(NULL)
+		,rand(NULL)
+	{}
+
+};
+void print_list(_ListNode *head)    //打印链表的所有元素
+{
+	_ListNode* cur = head;
+	_ListNode* ran = head;
+	while(cur != NULL){
+		printf("%d->",cur->data);
+		cur = cur->next;
+	}
+	printf("NULL\n");
+	while(ran != NULL){
+		printf("rand :%d piont to %d\n",ran->data,ran->rand->data);
+		ran = ran->next;
+	}
+}
+_ListNode *Create_complex(char a,char b,char c)
+{
+	_ListNode *head = NULL;
+	_ListNode *node1 = new _ListNode(a);
+	_ListNode *node2 = new _ListNode(b);
+	_ListNode *node3 = new _ListNode(c);
+	head = node1;
+	node1->next = node2;
+	node2->next = node3;
+	node1->rand = node3;
+	node2->rand = node1;
+	node3->rand = node2;
+	return head;
+}
+_ListNode *Copy_List(_ListNode *head)
+{
+	_ListNode *newhead = NULL;
+	_ListNode *newnode = NULL;
+	_ListNode *cur = head;
+	_ListNode *newhead_tail = NULL;
+	while(cur != NULL){    //1->2->3====>1->1'->2->2'->3->3'
+		newnode = new _ListNode(cur->data);
+		newnode->next = cur->next;
+		cur->next = newnode;
+		cur = cur->next->next;
+	}
+	cur = head;
+	while(cur != NULL){     //指向正确的rand域
+		cur->next->rand = cur->rand->next;
+		cur = cur->next->next;
+	}
+	//print_list(head);
+	cur = head;         //拆分链表
+	newhead = cur->next;
+	cur->next = cur->next->next;
+	newhead_tail = head;
+	cur = cur->next;
+	while(cur != NULL){     //新链表进行尾插，旧链表改变指向
+		newhead_tail->next = cur->next;
+		cur->next = cur->next->next;
+		cur = cur->next;
+	}
+	return newhead;
+}
+void testComplexList()
+{
+	char a = 1;
+	char b = 2;
+	char c = 3;
+	_ListNode *head = Create_complex(a,b,c);
+    _ListNode *newhead = NULL;
+	print_list(head);
+	newhead = Copy_List(head);
+	printf("the new list :\n");
+	print_list(newhead); 
+}
 int main()
 {
 	//testPrintListReverse();
 	//testDeleteNode();
 	//testFindKNode();
 	//testReverseList();
-	testMerge();
+	//testMerge();
+	//testCross();
+	testComplexList();
 	system("pause");
 	return 0;
 }
