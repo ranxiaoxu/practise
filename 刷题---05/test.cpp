@@ -2,6 +2,8 @@
 #include<stdlib.h>
 #include<assert.h>
 #include<stdio.h>
+#include<set>
+#include<vector>
 using namespace std;
 //1*********************************数值的整数次方
 //1.如果指数为负数，要求倒数，对0不能求倒数，当基数为0，指数为负数时，程序会崩溃，
@@ -150,11 +152,48 @@ void test3()
 	StrArrange(str);
 }
 //4*********************************字符的所有组合
+void _Combination(char *string ,int number,vector<char> &result);  
+void Combination(char *string)  
+{  
+    assert(string != NULL);  
+    vector<char> result;  
+    int i , length = strlen(string);  
+    for(i = 1 ; i <= length ; ++i)  
+        _Combination(string , i ,result);  
+}  
+void _Combination(char *string,int number,vector<char> &result)  
+{  
+    assert(string != NULL);  
+    if(number == 0)  
+    {  
+        static int num = 1;  
+        cout<<num++<<":";  
+  
+        vector<char>::iterator iter = result.begin();  
+        for( ; iter != result.end() ; ++iter)  
+            cout<<*iter; 
 
-
+        cout<<endl;
+        return ;  
+    }  
+    if(*string == '\0')  
+        return ;  
+    result.push_back(*string);  
+    _Combination(string + 1,number - 1,result);  
+    result.pop_back();  
+    _Combination(string + 1,number,result);  
+}  
+void test4()
+{
+	char str[] = "ABC";  
+    Combination(str); 
+}
 //5*********************************数组中超过一半的数字
+//1.类似于快速排序的算法，找到中位数  
+bool g_ret = false;
 bool CheckOverHalf(int *a,int length,int number)
 {
+	g_ret = false;
 	int count = 0;
 	for(int i = 0;i < length;++i)
 	{
@@ -162,10 +201,79 @@ bool CheckOverHalf(int *a,int length,int number)
 			count++;
 	}
 	if(count >= (length+1)/2)
-		return true;
+	{
+		g_ret = true;
+		return true;	
+	}
 	else
 		return false;
 }
+int Patition(int *a,int left,int right)
+{
+	assert(a && left >= 0 && right >= 0 && right >= left);
+ 
+    int begin = left;  
+    int end = right - 1;
+    int key = a[right]; 
+
+    while(begin < end)  
+    {  
+  
+        while(begin < end && a[begin] <= key)  
+            ++begin;  
+  
+        while(begin < end && a[end] >= key)  
+            --end;  
+  
+        if(begin < end)  
+            swap(a[begin],a[end]);  
+    }  
+    if(a[end] > key)  
+    {  
+        swap(a[end],a[right]);  
+        return end;  
+    }  
+    else  
+    {  
+        return right;  
+    }  
+}  
+int MoreThanhalf(int *array,int length)
+{
+	assert(array);
+	assert(length > 0);
+
+	int mid = length/2;
+	int start = 0;
+	int end = length-1;
+
+	int index = Patition(array,start,end);
+
+	while(index != mid)
+	{
+		if(index > mid)
+		{
+			end = index -1;
+			index = Patition(array,start,end);
+		}
+		else if(index < mid)
+		{
+			start = index + 1;
+			index = Patition(array,start,end);
+		}
+	}
+	int ret = array[mid];
+	if(CheckOverHalf(array,length,ret))
+		return ret;
+	else
+		return 0;
+}
+//2.根据数组的特点求解
+
+//如果count==0,保存当前的数，count=1
+//如果当前的数与上次的数相同，count++
+//如果当前的数与上次不同，count--
+//最后的结果就是最后一次保存的数
 int FindOverHalf(int *array,int length)
 {
 	assert(array);
@@ -192,20 +300,106 @@ int FindOverHalf(int *array,int length)
 void test5()
 {
 	int a[5] = {1,3,1,2,2};
-	cout<<FindOverHalf(a,5);
+	int a1[5] = {2,3,1,2,2};
+	cout<< MoreThanhalf(a,5)<<"   g_ret:"<<g_ret<<endl;
+	cout<<FindOverHalf(a,5)<<endl;
+	cout<< MoreThanhalf(a1,5)<<"   g_ret:"<<g_ret<<endl;
+	cout<<FindOverHalf(a1,5)<<endl;
 }
 //6*********************************最小的K个数
-/*int FinkMinK(int *array,int k)
+//1.用到前面的Patition函数,但是改变了原来的数组
+void FinkMinK(int *array,int n,int k)
 {
-	set<int> set;
-	for(;*array!= NULL;++array)
+	assert(array && n >=0 && k >= 0);
+
+	int start = 0;
+	int end = n-1;
+    
+	int index = Patition(array,start,end);
+
+	while(index != k-1)
 	{
-
+		if(index > k-1)
+		{
+			end = index -1;
+			index = Patition(array,start,end);
+		}
+		else if(index < k-1)
+		{
+			start = index + 1;
+			index = Patition(array,start,end);
+		}
 	}
-	return 0;
-}*/
-//7*********************************连续子数组的最大和
+}
+//2.用stl里的容器,用大堆的思想
+void _FinkMinK(int *array,int length,int k)
+{
+	assert(array);
+	assert(k > 0);
 
+	multiset<int,greater<int>> s;
+	multiset<int,greater<int>>::iterator s_iterater;
+
+	int count = 0;
+
+	s.clear();
+
+	while(count < length)
+	{
+		if(s.size() < k)
+			s.insert(array[count]);
+		else
+		{
+			s_iterater = s.begin();
+			if(*s_iterater > array[count])
+			{
+				s.erase(s_iterater);
+				s.insert(array[count]);
+			}
+		}
+		count++;
+	}
+	s_iterater = s.begin();
+	while(s_iterater != s.end())
+	{
+		cout<<*s_iterater<<"  ";
+		s_iterater++;
+	}
+}
+void test6()
+{
+	int a[10] = {3,4,5,6,7,8,9,10,1,2};
+	FinkMinK(a,10,4);
+	for(int i = 0;i < 4;++i)
+		cout<<a[i]<<"  ";
+	cout<<endl;
+	_FinkMinK(a,10,4);
+}
+//7*********************************连续子数组的最大和
+//观察规律
+int FindMaxSubArray(int *a,int n)
+{
+	assert(a);
+	assert(n > 0);
+
+	int sum = 0;
+	int maxsum = sum;
+	for(int i = 0;i < n;++i)
+	{
+		if(sum < 0)
+			sum = a[i];
+		else 
+			sum += a[i];
+		if(sum > maxsum)
+			maxsum = sum;
+	}
+	return maxsum;
+}
+void test7()
+{
+	int a[8] = {1,-2,3,10,-4,7,2,-5};
+	cout<<FindMaxSubArray(a,8)<<endl;
+}
 //8*********************************把数组排成最小的数
 //例如3，32，321，排出来最小的数是321323，隐藏的大数问题
 char *g_StrCombin1 = new char[20];
@@ -369,7 +563,10 @@ int main()
 	//test1();
 	//test2();
 	//test3();
+	test4();
 	//test5();
+	//test6();
+	//test7();
 	//test8();
 	//test9();
 	//test10();
